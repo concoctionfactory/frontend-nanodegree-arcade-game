@@ -1,7 +1,8 @@
-// check for collisions and returns true or false, 
+// check for collisions and returns true or false,
 function isCollision(obj1X, obj1Y, obj2X , obj2Y){
-	if (obj1X < obj2X + tile.x &&
-		obj1X + tile.x > obj2X &&
+	var offset=20;
+	if (obj1X < obj2X + tile.x - offset &&
+		obj1X + tile.x > obj2X + offset&&
 		obj1Y == obj2Y){
 		return true;
 	}
@@ -15,6 +16,113 @@ function isCollision(obj1X, obj1Y, obj2X , obj2Y){
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+//resets game
+function gameReset(){
+	propGen(allGems, false);
+	propGen(allEnemies, true);
+}
+
+//generates postions and speed for gem/enemy
+function propGen(array,isSpeed){
+	for (var i=0; i < array.length; i += 1){
+		var posX = getRandomInt(0, tile.xNum-1)* tile.x;
+		var posY = getRandomInt(1,3)*tile.y-tile.cut;
+
+		//makes sure that no two postions are the same
+		function checkSame(){
+			for(var num=i; num > 0; num -= 1){
+				var count =num-1;
+
+				if (posX == array[count].x && posY == array[count].y){
+					posX = getRandomInt(0, tile.xNum-1)* tile.x;
+					posY = getRandomInt(1,3)*tile.y-tile.cut;
+					checkSame();
+				}
+			}
+		}
+
+		checkSame();
+		array[i].x=posX;
+		array[i].y=posY;
+		if (isSpeed==true){
+			array[i].speed= getRandomInt(20,50);
+		}
+	}
+	array= sortDraw(array);
+}
+
+// sorts the tiles so tiles a re drawn back to front
+function sortDraw(arr){
+	arr.sort(sortFunc);
+	function sortFunc(a,b){
+		if (a.y === b.y) return 0;
+		else return(a.y < b.y) ? -1:1;
+	};
+	return arr;
+}
+
+
+var winGame = false;
+var loseGame = false;
+
+var level = function(nEmemis,nGems){
+	this.numEnemies = nEmemis;
+	this.numGems = nGems;
+};
+
+// values for gems and enemis in levels
+var allLevels = [
+	new level(2,1),
+	new level(3,5),
+	new level(1,3),
+	new level(1,4)
+];
+
+var numLv= -1;
+var numEnemies;
+var numGems;
+
+var allGems =[];
+var allEnemies=[];
+var gemCounter = 0;
+
+//changes level, if all levels complete, send win state
+function changeLevel(){
+	numLv+=1;
+	console.log(numLv);
+	if (numLv== allLevels.length){
+		console.log("win");
+		winGame = true;
+		return;
+	}
+
+	numEnemies= allLevels[numLv].numEnemies;
+	numGems = allLevels[numLv].numGems;
+	console.log(allLevels[numLv].numEnemies , allLevels[numLv].numGems);
+
+	// push/pop array to match the number items need in level
+	function matchArrayNum(array, num, newObj){
+		while (array.length< num){
+			array.push(new newObj());
+		}
+		while(array.length>num){
+			array.pop();
+		}
+	}
+
+	// cannot call array on first run since arrays havent been filled
+	if (numLv > 0){
+		matchArrayNum(allGems, allLevels[numLv].numGems, Gem);
+		matchArrayNum(allEnemies, allLevels[numLv].numEnemies, Enemy);
+		gameReset();
+	}
+}
+
+changeLevel();
+
+
+
 
 //pixel size for tiles, num of tiles and caluation for start and end of tiles
 var tile={
@@ -37,7 +145,8 @@ var Enemy = function(x, y, speed) {
 	this.x= x;
 	this.y= y;
 	this.speed =speed;
-}
+};
+
 
 
 Enemy.prototype.update = function(dt) {
@@ -54,13 +163,14 @@ Enemy.prototype.update = function(dt) {
 		console.log('hit');
 		player.x = 2*tile.x;
 		player.y = tile.yStart;
+		loseGame = true;
 	}
-}
+};
 
 
 Enemy.prototype.render = function() {
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-}
+};
 
 
 //Player
@@ -68,13 +178,13 @@ var Player = function(x, y) {
 	this.sprite ='images/char-boy.png';
 	this.x= x;
 	this.y= y;
-}
+};
 
 
 //Player
 Player.prototype.render = function() {
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-}
+};
 
 
 Player.prototype.handleInput= function(key){
@@ -95,7 +205,7 @@ Player.prototype.handleInput= function(key){
 			this.y+=tile.y;
 		break;
 	}
-}
+};
 
 //updates player postion
 Player.prototype.update= function(){
@@ -107,28 +217,23 @@ Player.prototype.update= function(){
 	}
 	if(this.y <= tile.yEnd){
 		this.y = tile.yStart;
+		changeLevel();
 	}
 	if(this.y>=tile.yStart){
 		this.y = tile.yStart;
 	}
-}
+};
 
 
 // instantiate enemies
-var allEnemies  =[];
-var numEnemies= 4;
-
-var i;
-for (i=0; i < numEnemies; i += 1){
-	var ememyX = getRandomInt(0, tile.xNum)* tile.x;
-	var ememyY = getRandomInt(1,3)*tile.y-tile.cut;
-	allEnemies[i]= new Enemy(ememyX, ememyY, getRandomInt(20,50));
+for (var i=0; i < numEnemies; i += 1){
+	allEnemies[i]= new Enemy(1,1,1);
 }
+propGen(allEnemies, true);
 
 
 //instantiate player
 var player = new Player(2*tile.x, tile.yStart,10);
-
 
 
 // This listens for key presses and sends the keys to player
@@ -142,3 +247,40 @@ document.addEventListener('keyup', function(e) {
 
 	player.handleInput(allowedKeys[e.keyCode]);
 });
+
+
+
+/////////////GEM
+
+////////////
+var Gem = function(x,y){
+	var sprite = [
+		'images/Gem Blue.png',
+		'images/Gem Orange.png',
+		'images/Gem Green.png'
+		]
+	this.sprite = sprite[getRandomInt(0,2)]
+	this.x =x;
+	this.y =y;
+};
+
+Gem.prototype.render= function(){
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
+// instantiate gem
+for (var i=0; i < numGems; i += 1){
+	allGems[i]= new Gem(1,1,1);
+};
+
+propGen(allGems,false);
+
+Gem.prototype.update = function(){
+	if(isCollision(this.x, this.y, player.x, player.y)){
+		this.x =-100;
+		this.y =-100;
+		gemCounter +=1;
+	}
+};
+
+
