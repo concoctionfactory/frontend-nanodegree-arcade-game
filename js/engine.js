@@ -69,27 +69,28 @@ var Engine = (function(global) {
 		ctx.font = "12pt Arial";
 		ctx.fillStyle ="black";
 		ctx. textAlign ="right";
-		if (numLv==allLevels.length){
-			ctx.fillText("LEVEL "+(numLv)+ " of "+allLevels.length, canvas.width,20);
+
+		if (allLvs.curr==allLvs.length){
+			ctx.fillText("LEVEL "+(allLvs.curr)+ " of "+allLvs.length, canvas.width,20);
 		}
 		else{
-			ctx.fillText("LEVEL "+(numLv+1)+ " of "+allLevels.length, canvas.width,20);
+			ctx.fillText("LEVEL "+(allLvs.curr+1)+ " of "+allLvs.length, canvas.width,20);
 		}
 
 		ctx. textAlign ="left";
 		ctx.fillText("	TIME LEFT "+ Math.floor(timerCounter-=.1),0,20);
-		ctx.fillText("GEMS " + gemCounter, 3, 40);
+		ctx.fillText("GEMS " + allGems.counter, 3, 40);
 
 		ctx.font = "36pt Impact";
 		ctx. textAlign ="center";
 		ctx.fillStyle ="white";
 
-		if (winGame==true){
+		if (game.winGame==true){
 			ctx.fillText("WIN", canvas.width/2,canvas.height/2);
 			return true;
 		}
 
-		else if (loseGame==true){
+		else if (game.loseGame==true){
 			ctx.fillText("LOSE", canvas.width/2,canvas.height/2);
 			return true;
 		}
@@ -207,6 +208,7 @@ var Engine = (function(global) {
 		/* Loop through all of the objects within the allEnemies array and call
 		 * the render function you have defined.
 		 */
+
 		allGems.forEach(function(gem) {
 			gem.render();
 		});
